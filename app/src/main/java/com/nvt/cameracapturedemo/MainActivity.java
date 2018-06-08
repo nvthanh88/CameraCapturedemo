@@ -10,6 +10,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -66,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private static String imageStoragePath;
 
     private ImageView imgPreview;
-    private Button btnTakePhoto;
+    private Button btnTakePhoto,btnStart;
     SurfaceView surfaceView;
     android.hardware.Camera.ShutterCallback shutterCallback;
     android.hardware.Camera.PictureCallback jpegCallback;
@@ -93,19 +95,20 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 File file = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS) + "/" + System.currentTimeMillis() + ".jpg");
                 imageStoragePath = file.getAbsolutePath();
                 Matrix matrix = new Matrix();
-                matrix.setRotate(90);
+                matrix.postRotate(90);
+                bitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,true);
                 FileOutputStream outStream = null;
                 try {
                     outStream = new FileOutputStream(file);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
                     outStream.flush();
                     outStream.close();
-                    Bitmap second = addText(bitmap);
+                    Bitmap second = addLayout(bitmap);
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     second.compress(Bitmap.CompressFormat.JPEG, 100, bos);
                     MediaStore.Images.Media.insertImage(getApplicationContext().getContentResolver(),
                             second, imageStoragePath, "" + new Date().getTime());
-                    previewCapturedImage();
+                    previewCapturedImage(second);
                 } catch (Exception e) {
                     e.getMessage();
                     Log.d("getMessage", e.getMessage());
@@ -116,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
 
         };
-        restoreFromBundle(savedInstanceState);
     }
 
     @Override
@@ -136,20 +138,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void captureImage() {
+        rltPicture.setVisibility(View.VISIBLE);
         SurfaceHolder surfaceHolder = surfaceView.getHolder();
         surfaceHolder.addCallback(this);
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        camera = android.hardware.Camera.open();
-        try {
-            setFocus();
-            camera.setDisplayOrientation(90);
-            camera.setPreviewDisplay(surfaceHolder);
-            camera.startPreview();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        rltPicture.setVisibility(View.VISIBLE);
+
+
 
     }
 
@@ -198,16 +193,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 }).show();
     }
 
-    private void previewCapturedImage() {
+    private void previewCapturedImage(Bitmap finalBitmap) {
         try {
-
             // hide video preview
             rltPicture.setVisibility(View.GONE);
             imgPreview.setVisibility(View.VISIBLE);
-
-            Bitmap bitmap = CameraUtils.optimizeBitmap(BITMAP_SAMPLE_SIZE, imageStoragePath);
-
-            imgPreview.setImageBitmap(bitmap);
+            imgPreview.setImageBitmap(finalBitmap);
 
         } catch (NullPointerException e) {
             e.printStackTrace();
@@ -235,25 +226,20 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         imageStoragePath = savedInstanceState.getString(KEY_IMAGE_STORAGE_PATH);
     }
 
-    private void restoreFromBundle(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            if (savedInstanceState.containsKey(KEY_IMAGE_STORAGE_PATH)) {
-                imageStoragePath = savedInstanceState.getString(KEY_IMAGE_STORAGE_PATH);
-                if (!TextUtils.isEmpty(imageStoragePath)) {
-                    if (imageStoragePath.substring(imageStoragePath.lastIndexOf(".")).equals("." + IMAGE_EXTENSION)) {
-                        previewCapturedImage();
-                    } else if (imageStoragePath.substring(imageStoragePath.lastIndexOf(".")).equals("." + VIDEO_EXTENSION)) {
-                        //previewVideo();
-                    }
-                }
-            }
-        }
-    }
+
 
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-
+        camera = android.hardware.Camera.open();
+        try {
+            setFocus();
+            camera.setDisplayOrientation(90);
+            camera.setPreviewDisplay(surfaceHolder);
+            camera.startPreview();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -270,58 +256,44 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
-    private Bitmap addText(Bitmap toEdit){
+    private Bitmap addLayout(Bitmap toEdit){
 
         Bitmap dest = toEdit.copy(Bitmap.Config.ARGB_8888, true);
+        int pictureHeight = dest.getHeight();
+        int pictureWidth = dest.getWidth();
+        int margin = 50;
+        int padding = 100;
+
+
+
         Canvas canvas = new Canvas(dest);
 
-        Paint paint = new Paint();  //set the look
-        paint.setAntiAlias(true);
-        paint.setColor(Color.GREEN);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setShadowLayer(2.0f, 1.0f, 1.0f, Color.BLACK);
+        Paint painText = new Paint();  //set the look
+        painText.setAntiAlias(true);
+        painText.setColor(Color.WHITE);
+        painText.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        painText.setStyle(Paint.Style.FILL);
+        painText.setShadowLayer(2.0f, 1.0f, 1.0f, Color.GRAY);
+        painText.setTextSize(pictureHeight * .04629f);
 
-        int pictureHeight = dest.getHeight();
-        paint.setTextSize(pictureHeight * .04629f);
-        canvas.drawLine(1,101,dest.getWidth()/2,101,paint);
-        canvas.drawText("Hello World" , dest.getWidth()/2,  100, paint);
+        Paint paintLine = new Paint();  //set the look
+        paintLine.setAntiAlias(true);
+        paintLine.setColor(Color.WHITE);
+        paintLine.setStyle(Paint.Style.FILL);
+        paintLine.setStrokeWidth(10f);
+        paintLine.setShadowLayer(2.0f, 1.0f, 1.0f, Color.GRAY);
+
+        //Draw line 1
+        canvas.drawLine(padding,pictureHeight*2/3 + margin,pictureWidth/3,pictureHeight*2/3 + margin,paintLine);
+        canvas.drawText("COURSE" , padding,  pictureHeight*2/3 , painText);
+        canvas.drawLine(pictureWidth *2/3,pictureHeight*2/3 + margin,pictureWidth - padding,pictureHeight*2/3 + margin,paintLine);
+        canvas.drawText("SPOT" , pictureWidth *2/3,  pictureHeight*2/3 , painText);
+        //Draw line 2
+        canvas.drawLine(padding,pictureHeight*5/6 + margin,pictureWidth/3,pictureHeight*5/6 + margin,paintLine);
+        canvas.drawText("TIME" , padding,  pictureHeight*5/6 , painText);
+        canvas.drawLine(pictureWidth *2/3,pictureHeight*5/6 + margin,pictureWidth - padding,pictureHeight*5/6 + margin,paintLine);
+        canvas.drawText("DISTANCE" , pictureWidth *2/3,  pictureHeight*5/6 , painText);
         return dest;
-    }
-    private void setRotation(android.hardware.Camera camera, android.hardware.Camera.Parameters parameters) {
-        WindowManager windowManager = (WindowManager) getApplicationContext().getSystemService(getApplicationContext().WINDOW_SERVICE);
-        int degrees = 0;
-        switch (windowManager.getDefaultDisplay().getRotation()) {
-            case Surface.ROTATION_0:
-                degrees = 0;
-                break;
-            case Surface.ROTATION_90:
-                degrees = 90;
-                break;
-            case Surface.ROTATION_180:
-                degrees = 180;
-                break;
-            case Surface.ROTATION_270:
-                degrees = 270;
-                break;
-            default:
-                Log.e(TAG, "Bad rotation value");
-        }
-
-        android.hardware.Camera.CameraInfo cameraInfo = new android.hardware.Camera.CameraInfo();
-
-        int angle;
-        int displayAngle;
-        if (cameraInfo.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            angle = (cameraInfo.orientation + degrees) % 360;
-            displayAngle = (360 - angle) % 360; // compensate for it being mirrored
-        } else {  // back-facing
-            angle = (cameraInfo.orientation - degrees + 360) % 360;
-            displayAngle = angle;
-        }
-
-
-        camera.setDisplayOrientation(90);
-        parameters.setRotation(0);
     }
     public void setFocus() {
         android.hardware.Camera.Parameters params = camera.getParameters();

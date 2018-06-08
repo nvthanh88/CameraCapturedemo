@@ -7,15 +7,16 @@
 
     <ImageView
         android:id="@+id/imgCaptured"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
+        android:layout_width="500dp"
+        android:layout_height="500dp"
+        android:scaleType="fitXY"
         android:visibility="gone" />
+
     <RelativeLayout
         android:id="@+id/rltPicture"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible">
+        android:visibility="gone">
         <SurfaceView
             android:id="@+id/captureSurfaceView"
             android:layout_width="match_parent"

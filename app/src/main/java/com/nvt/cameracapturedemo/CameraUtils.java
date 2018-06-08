@@ -20,29 +20,10 @@ import java.util.Date;
 import java.util.Locale;
 
 public class CameraUtils {
-    public static void refreshGallery(Context context, String filePath) {
-        // ScanFile so it will be appeared on Gallery
-        MediaScannerConnection.scanFile(context,
-                new String[]{filePath}, null,
-                new MediaScannerConnection.OnScanCompletedListener() {
-                    public void onScanCompleted(String path, Uri uri) {
-                    }
-                });
-    }
+
     public static boolean checkPermissions(Context context) {
         return ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
-    }
-    public static Bitmap optimizeBitmap(int sampleSize, String filePath) {
-        // bitmap factory
-        BitmapFactory.Options options = new BitmapFactory.Options();
-
-        // downsizing image as it throws OutOfMemory Exception for larger
-        // images
-        options.inSampleSize = sampleSize;
-
-        return BitmapFactory.decodeFile(filePath, options);
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
     public static boolean isDeviceSupportCamera(Context context) {
         if (context.getPackageManager().hasSystemFeature(
@@ -61,38 +42,5 @@ public class CameraUtils {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
-    public static Uri getOutputMediaFileUri(Context context, File file) {
-        return FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
-    }
-    public static File getOutputMediaFile(int type) {
 
-        // External sdcard location
-        File mediaStorageDir = new File(
-                Environment
-                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                MainActivity.GALLERY_DIRECTORY_NAME);
-
-        // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                Log.e(MainActivity.GALLERY_DIRECTORY_NAME, "Oops! Failed create "
-                        + MainActivity.GALLERY_DIRECTORY_NAME + " directory");
-                return null;
-            }
-        }
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
-                Locale.getDefault()).format(new Date());
-        File mediaFile;
-        if (type == MainActivity.MEDIA_TYPE_IMAGE) {
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator
-                    + "IMG_" + timeStamp + "." + MainActivity.IMAGE_EXTENSION);
-        } else if (type == MainActivity.MEDIA_TYPE_VIDEO) {
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator
-                    + "VID_" + timeStamp + "." + MainActivity.VIDEO_EXTENSION);
-        } else {
-            return null;
-        }
-
-        return mediaFile;
-    }
 }
